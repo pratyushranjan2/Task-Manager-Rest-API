@@ -2,6 +2,8 @@ const express = require('express');
 const auth = require('../middleware/auth');
 const router = express.Router();
 const Task = require('../models/task');
+const multer = require('multer');
+const sharp = require('sharp');
 
 router.post('/tasks',auth , async (req,res) => {
     const task = new Task({
@@ -108,6 +110,54 @@ router.delete('/tasks/:id',auth , async (req,res) => {
     } catch(error) {
         res.status(500).send(error);
     }
+});
+
+const upload = multer({
+    limits: {
+        fileSize: 3000000
+    },
+    fileFilter(req,file,cb) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+            return cb(new Error('Upload only in jpg, jpeg or png formats'));
+        }
+        cb(undefined,true);
+    }
+});
+
+router.post('/tasks/pic/:id', auth, upload.single('pic'), async(req,res) => {
+    const buffer = await sharp(req.file.buffer).resize({width: 400, height: 400}).png().toBuffer();
+    const task = await Task.findOne({_id: req.params.id, owner: req.user._id});
+    if (!task) {
+        return res.status(404).send({error: 'No such task'});
+    }
+    task.pic = buffer;
+    await task.save();
+    res.send();
+}, (error, req, res, next) => {
+    res.satus(400).send({error: error.message});
+});
+
+router.get('/tasks/pic/:id', auth, async(req,res) => {
+    try {
+        const task = await Task.findOne({_id: req.params.id, owner: req.user._id});
+        if (!task || !task.pic) {
+            throw new Error('404 not found');
+        }
+        res.set('Content-Type', 'image/png');
+        res.send(task.pic);
+    } catch (error) {
+        res.status(400).send('Failed to get image');
+    }
+});
+
+router.delete('/tasks/pic/:id', auth, async (req,res) => {
+    const task = await Task.findOne({_id: req.params.id, owner: req.user._id});
+    if (!task) {
+        return res.status(404).send({error: 'No such task'});
+    }
+    task.pic = undefined;
+    await task.save();
+    res.send();
 });
 
 module.exports = router;

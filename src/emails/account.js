@@ -15,7 +15,7 @@ const sendWelcomeEmail = (email,name) => {
         to: email,
         from: 'pratyushranjan02@gmail.com',
         subject: 'Welcome to Nodejs',
-        text: `Get lost, ${name}.`,
+        text: `Hello, ${name}.`,
     });
 }
 
@@ -23,8 +23,8 @@ const sendCancellationEmail = (email,name) => {
     sgMail.send({
         to: email,
         from: 'pratyushranjan02@gmail.com',
-        subject: 'We hated you already',
-        text: 'Thankyou. We can finally breathe.'
+        subject: 'We are sorry for the issues',
+        text: 'You can provide recommendations to improve'
     });
 }
 
